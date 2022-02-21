@@ -15,7 +15,7 @@ def main():
     
     # if successfully connect start sending messages
     time_stamp = time.time()
-    data = format(time_stamp, Node_Name)
+    data = "{} {}".format(time_stamp, Node_Name)
     s.send(data.encode())
 
     while True:
@@ -24,7 +24,7 @@ def main():
         datas = income.split()
         time_stamp = datas[0]
         message = datas[1]
-        data = format(time_stamp, Node_Name, message)
+        data = "{} {} {}".format(time_stamp, Node_Name, message)
         s.send(data.encode())
 
         # when to break and disconnect
