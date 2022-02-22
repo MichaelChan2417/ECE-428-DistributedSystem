@@ -15,7 +15,7 @@ def main():
     
     # if successfully connect start sending messages
     time_stamp = time.time()
-    data = "{} {}".format(time_stamp, Node_Name)
+    data = "{} {} ".format(time_stamp, Node_Name)
     s.send(data.encode())
 
     while True:

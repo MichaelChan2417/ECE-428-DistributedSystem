@@ -1,6 +1,8 @@
+from os import times
 import sys
-import time
 import socket
+import threading
+import time
 
 # define the upper bound when listen
 n_nodes = 3
@@ -18,17 +20,24 @@ def fwrite(conn):
         
         contant = datas.decode()
         data = contant.split()
-
         ## we have 2 conditions here
         ## if the data's size == 2 then it is a connected log
+        ## but !!! the while true will make the first send have 
+        ## two messages together
         ## else it should be the in-process log or a disconnected log
-        if(len(data) == 2):
+        if(len(data) == 5):
             # now it is a connected log
             timestamp = data[0]
             nodename = data[1]
             with open(LOG,"a") as f:
                 f.write(timestamp + " - " + nodename + " connected\n")
-            
+            timestamp = data[2]
+            nodename = data[3]
+            message = data[4]
+            with open(LOG,"a") as f:
+                f.write(timestamp + " " + nodename + "\n")
+                f.write(message + "\n")
+
             # now the length is 3
         else:
             timestamp = data[0]
@@ -43,6 +52,7 @@ def fwrite(conn):
                 with open(LOG,"a") as f:
                     f.write(timestamp + " " + nodename + "\n")
                     f.write(message + "\n")
+    conn.close()
 
 
 
@@ -66,8 +76,7 @@ def main():
         conn, addr = s.accept()
 
         # write log
-        fwrite(conn)
-
-        conn.close()
+        t=threading.Thread(target=fwrite, args=(conn,))
+        t.start()
 
 main()
