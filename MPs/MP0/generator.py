@@ -19,3 +19,5 @@ while max_events is None or event_count < max_events:
     event_count += 1
     print("%s %s" % (time.time(), sha256(urandom(20)).hexdigest()), flush=True)
     time.sleep(expovariate(rate))
+
+print("%s END" % time.time(), flush=True)
