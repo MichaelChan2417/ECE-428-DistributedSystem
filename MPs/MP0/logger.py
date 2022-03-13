@@ -99,7 +99,6 @@ def main():
     while True:
         # accept will return 2 values
         conn, addr = s.accept()
-
         # write log
         t=threading.Thread(target=fwrite, args=(conn,start_time,size,))
         t.start()
