@@ -1,0 +1,1 @@
+python3 mp1_node.py node1 1111 node1_config.txt & python3 mp1_node.py node2 2222 node2_config.txt 
