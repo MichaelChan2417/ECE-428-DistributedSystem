@@ -1,44 +1,62 @@
+from glob import glob
+from operator import is_
+from pprint import isrecursive
 import sys
 import socket
 import time
 import threading
+from tokenize import blank_re
 
+is_received = 0
+bank = {}
 
 # the class of broadcast should send out to everyone else
 class broadcast(threading.Thread):
-    def __init__(self, threadID, name, soc, nodes_list, n_connected):
+    def __init__(self, threadID, name, soc, nodes_list):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
         self.soc = soc
         self.nodes_list = nodes_list
-        self.n_connected = n_connected
 
     def run(self):
+
         # The first part is that it should send to each nodes to make sure the starting-connection
-        while True:
-            msg = "Hello!"
-            msg = msg.encode()
+        global is_received
 
-            for i in range(len(self.nodes_list)):
-                nodes_i = self.nodes_list[i].split()
+        msg = "Hello!"
+        msg = msg.encode()
 
-                # print(self.name, "sends to", nodes_i[0])
+        for i in range(len(self.nodes_list)):
+            nodes_i = self.nodes_list[i].split()
+                
+            # the ith node that local one need to send to
+            while True:
                 self.soc.sendto(msg, (nodes_i[1], int(nodes_i[2])))
+                print("now", self.name, "is sending to", nodes_i[0])
+                # wait till we got the is_received message
+                time.sleep(5)
+                # if the is_received is one, then it means that the start connection msg is ACKed
+                if(is_received):
+                    is_received = 0
+                    print(self.name, "received the ACK from", nodes_i[0])
+                    break  # ready for the next node to connect
+        
+        # now all nodes have been connected together and we need to deal with the information
 
-            time.sleep(5)
 
 
 # the class of receive end
 class receive(threading.Thread):
-    def __init__(self, threadID, name, soc, n_connected):
+    def __init__(self, threadID, name, soc):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.name = name
         self.soc = soc
-        self.n_connected = n_connected
 
     def run(self):
+        global is_received
+
         while True:
             msg = ""
             addr = ""
@@ -50,11 +68,12 @@ class receive(threading.Thread):
             
             # if the message is the first hello message, send back a ACK and turn the flag
             if msg == "Hello!":
-                self.n_connected += 1
+                print(self.name, "received Hello")
                 self.soc.sendto("ACK".encode(), addr)
-
-            print(self.name, "received", msg)
-
+            # now the corresponding node received the ACK
+            elif msg == "ACK":
+                is_received = 1
+                print(self.name, "received ACK")
 
 # the function dealing with input
 def init_node():
@@ -82,39 +101,26 @@ def read_config_file(config_file_name):
     return n_node, cont
 
 
-# the function to set up connections
-def server_set_up(port, n_node, node_id):
-    s = socket.socket()
-    s.bind(("127.0.0.1", int(port)))
-    s.listen(n_node)
-
-    print(node_id, "is listening")
-
-    while True:
-        print(node_id, "Still waiting")
-        time.sleep(5)
-
-
-# the function to start connecting other nodes
-def connecting(node_id, n_node, nodes_list):
-    print("Start Connecting", node_id)
-    # here should be a loop for connecting all the nodes
-    for i in range(n_node):
-        node_args = nodes_list[i].split(" ")
-        print("Now Connecting to", node_args[0], "...")
-        s = socket.socket()
-        s.connect((node_args[1], int(node_args[2])))
-        # the flag to detect whether successfully connected
-        flag = 0
-        while flag != 1:
-            message = "CONNECT"
-            s.send(message.encode())
-
-
 # the function when dealing with the input from gentx
 # with a dictionary outside containing the total informations
+# where message is the income string; while bank is the dictionary that store all the infos.
 def account_modify(message):
+    global bank
+
+    info = message.split()
+
+    # it means that it is a deposit
+    if len(info) == 3:
+        bank[info[1]] = int(info[2])
+    # else it would be transfer
+    elif len(info) == 5:
+        client1 = info[1]
+        client2 = info[3]
+        amount = int(info[4])
+        
     
+    return
+
 
 # The main function of the node.py
 def main():
@@ -127,9 +133,10 @@ def main():
     soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     soc.bind(("127.0.0.1", port))
     
-    n_connected = 0
-    thread_broadcast = broadcast(1, node_id, soc, nodes_list, n_connected)
-    thread_receive = receive(2, node_id, soc, n_connected)
+    global is_received
+
+    thread_broadcast = broadcast(1, node_id, soc, nodes_list)
+    thread_receive = receive(2, node_id, soc)
     
     thread_broadcast.start()
     thread_receive.start()
