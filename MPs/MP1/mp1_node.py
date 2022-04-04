@@ -148,8 +148,12 @@ class receive(threading.Thread):
 
                         # compare with the full set and send to the rest nodes
                         rest_set = full_set - msgs[instruction][1]
+
                         # check whether all confirmed
-                        if len(rest_set) == 0:
+                        if len(rest_set) <= int((len(full_set)+1)/3):
+                            temp_msg = instruction + "+" + str(ins_prio) + "+" + str(self.id)
+                            self.soc.sendto(temp_msg.encode(), addr)
+                            
                             flag = 1
                             for ele in priority_Q:
                                 if ele[1] == instruction:
@@ -159,6 +163,7 @@ class receive(threading.Thread):
                             temp_msg = instruction + "+" + str(ins_prio) + "+" + str(self.id)
                             # its fake rest set
                             self.send_all(temp_msg)
+
                     # now the stored priority is less than the new priority
                     elif his_prio < ins_prio:
                         # make the update in local msgs and priority Q
@@ -173,6 +178,7 @@ class receive(threading.Thread):
                         msgs[instruction] = [ins_prio, temp_set]
                         temp_msg = instruction + "+" + str(ins_prio) + "+" + str(self.id)
                         self.send_all(temp_msg)
+
                     # now the stored priority is higher than income
                     # just send back to the sender that you should take the higher one
                     else:
