@@ -46,6 +46,7 @@ class broadcast(threading.Thread):
         msg = msg.encode()
 
         for i in range(self.n_connected):
+            print(i)
             nodes_i = self.nodes_list[i].split()
                 
             # the ith node that local one need to send to
@@ -53,7 +54,7 @@ class broadcast(threading.Thread):
                 self.soc.sendto(msg, (nodes_i[1], int(nodes_i[2])))
                 # print("now", self.name, "is sending to", nodes_i[0])
                 # wait till we got the is_received message
-                # time.sleep(5)
+                time.sleep(2)
                 # if the is_received is one, then it means that the start connection msg is ACKed
                 if(is_received):
                     is_received = 0
